@@ -1,0 +1,32 @@
+---
+# postgresql
+db_user: piprecious
+db_name: piprecious
+
+# the password is in form of "md5" + md5(password + username)
+db_password_enc: md57db26e708c5ef8ae0050fd11e4527b9c
+db_password: piprecious
+
+# minio
+minio_url: https://dl.minio.io/server/minio/release/linux-amd64/minio
+minio_user: minio
+minio_group: minio
+minio_bin_dir: /usr/local/bin
+minio_data_dir: /usr/local/minio
+minio_access_key: pipreciouspiprecious 
+minio_secret_key: pipreciouspiprecious
+minio_storage_media: piprecious-media
+minio_storage_static: piprecious-static
+
+# piprecious
+piprecious_user: piprecious
+piprecious_group: piprecious
+piprecious_dir: /usr/local/piprecious
+piprecious_static_dir: /usr/local/piprecious/piprecious/static
+virtualenv_dir: venv
+piprecious_admin_user: admin
+piprecious_admin_email: admin@admin.com
+piprecious_admin_pass: admin
+piprecious_server_name: piprecious
+piprecious_storage_dir: piprecious-storage
+piprecious_nginx_server_name: piprecious
