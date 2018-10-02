@@ -1,0 +1,118 @@
+---
+- name: Install common dependencies
+  apt: pkg={{item}} state=present update_cache=yes
+  with_items:
+    - libffi-dev
+    - libxml2-dev
+    - libxslt1-dev
+    - libssl-dev
+    - git
+    - virtualenv
+    - python3-dev
+    - dexdump
+    - gcc
+    - protobuf-compiler
+    - build-essential
+
+- name: Create the piprecious group
+  group:
+    name: "{{ piprecious_group }}"
+    state: present
+
+- name: Create the piprecious user
+  user:
+    name: "{{ piprecious_user }}"
+    shell: /sbin/nologin
+    group: "{{ piprecious_group }}"
+
+- name: Create the piprecious directory
+  file:
+    path: "{{ piprecious_dir }}"
+    state: directory
+    owner: "{{ piprecious_user }}"
+    group: "{{ piprecious_group }}"
+    mode: 0755
+
+- name: Install piprecious files
+  become: yes
+  become_user: "{{ piprecious_user }}"
+  git:
+    repo: https://github.com/PiRanhaLysis/PiPrecious.git
+    dest: "{{ piprecious_dir }}"
+
+- name: Generate piprecious random secret key
+  shell: tr -d -c "a-zA-Z0-9" < /dev/urandom | head -c 40
+  register: piprecious_secret_key
+
+- name: Install the prod.py for Django
+  template:
+    src: prod.py.j2
+    dest: "{{ piprecious_dir }}/piprecious/piprecious/settings/prod.py"
+    owner: "{{ piprecious_user }}"
+    group: "{{ piprecious_group }}"
+    mode: 0644
+
+- name: Initiate virtualenv
+  pip: virtualenv={{ piprecious_dir }}/{{ virtualenv_dir }}
+       virtualenv_python=python3
+       requirements={{ piprecious_dir }}/requirements.txt
+
+- name: Create the DB Schema
+  command: "{{ piprecious_dir }}/{{ virtualenv_dir }}/bin/python3 manage.py migrate --settings=piprecious.settings.prod"
+  args:
+    chdir: "{{ piprecious_dir }}/piprecious"
+
+- name: Delete the admin user
+  command: "{{ piprecious_dir }}/{{ virtualenv_dir }}/bin/python3 manage.py shell -c \"from django.contrib.auth.models import User; User.objects.get(username='{{ piprecious_admin_user }}', is_superuser=True).delete()\" --settings=piprecious.settings.prod"
+  #command: "{{ piprecious_dir }}/{{ virtualenv_dir }}/bin/python3 manage.py createsuperuser --settings=piprecious.settings.prod" 
+  args:
+    chdir: "{{ piprecious_dir }}/piprecious"
+  ignore_errors: yes
+
+
+- name: Create the admin user
+  command: "{{ piprecious_dir }}/{{ virtualenv_dir }}/bin/python3 manage.py shell -c \"from django.contrib.auth.models import User; User.objects.create_superuser('{{ piprecious_admin_user }}', '{{ piprecious_admin_email }}', '{{ piprecious_admin_pass }}')\" --settings=piprecious.settings.prod"
+  #command: "{{ piprecious_dir }}/{{ virtualenv_dir }}/bin/python3 manage.py createsuperuser --settings=piprecious.settings.prod" 
+  args:
+    chdir: "{{ piprecious_dir }}/piprecious"
+
+- name: Create the piprecious static files for nginx/gunicorn
+  command: "{{ piprecious_dir }}/{{ virtualenv_dir }}/bin/python3 manage.py collectstatic --settings=piprecious.settings.prod"
+  args:
+    chdir: "{{ piprecious_dir }}/piprecious"
+
+- name: Create the piprecious minio storage
+  file: 
+    path: "{{ minio_data_dir }}/{{ piprecious_storage_dir }}"
+    state: directory
+    owner: "{{ minio_user }}"
+    group: "{{ minio_group }}"
+    mode: 0755
+
+- name: Install the systemd file for gunicorn
+  template:
+    src: piprecious.service.j2
+    dest: /etc/systemd/system/piprecious.service
+    mode: 664
+
+- name: Install the nginx configuration for piprecious
+  template:
+    src: piprecious.conf.j2
+    dest: /etc/nginx/sites-available/piprecious.conf
+
+- name: Activate piprecious website
+  file:
+    src: /etc/nginx/sites-available/piprecious.conf
+    dest: /etc/nginx/sites-enabled/piprecious.conf
+    state: link
+
+- name: Restart nginx
+  systemd:
+    name: nginx
+    state: restarted
+    daemon_reload: yes
+
+- name: Start the service
+  service: name=piprecious.service state=started enabled=yes
+
+

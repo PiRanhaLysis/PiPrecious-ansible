@@ -1,0 +1,19 @@
+[Unit]
+Description=PiPrecious
+Wants=network-online.target
+After=network-online.target
+
+
+[Service]
+WorkingDirectory={{ piprecious_dir }}/piprecious
+Type=idle
+User={{ piprecious_user }}
+Group={{ piprecious_group }}
+
+ExecStart={{ piprecious_dir}}/{{ virtualenv_dir }}/bin/python3 manage.py runserver --settings=piprecious.settings.dev
+Restart=always
+TimeoutStartSec=10
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

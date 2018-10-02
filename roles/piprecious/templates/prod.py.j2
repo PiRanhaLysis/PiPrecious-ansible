@@ -1,0 +1,28 @@
+import os
+from .base import *
+SECRET_KEY = '{{ piprecious_secret_key.stdout }}'
+
+DEBUG = False
+
+ALLOWED_HOSTS = ['*']
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': '{{ db_name }}',
+        'USER': '{{ db_user }}',
+        'PASSWORD': '{{ db_password }}',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+
+STATIC_ROOT = '{{ piprecious_static_dir }}'
+MINIO_STORAGE_ENDPOINT = '127.0.0.1:9000'
+MINIO_STORAGE_ACCESS_KEY = '{{ minio_access_key }}'
+MINIO_STORAGE_SECRET_KEY = '{{ minio_secret_key }}'
+MINIO_STORAGE_USE_HTTPS = False
+MINIO_STORAGE_MEDIA_BUCKET_NAME = 'piprecious-media'
+MINIO_STORAGE_STATIC_BUCKET_NAME = 'piprecious-static'
+MINIO_STORAGE_AUTO_CREATE_MEDIA_BUCKET = True
+MINIO_STORAGE_AUTO_CREATE_STATIC_BUCKET = True
