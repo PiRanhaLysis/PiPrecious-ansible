@@ -41,5 +41,5 @@
     mode: 664
 
 - name: Start the service
-  service: name=minio.service state=started enabled=yes
+  service: name=minio.service state=started enabled=yes enabled=yes
 
