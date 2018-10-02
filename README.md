@@ -1,4 +1,4 @@
-# Ansible playbook for the PiRogue
+# Ansible playbook for the PiPrecious
 
 The following steps must be conducted on a computer where you want to install piprecious. 
 
